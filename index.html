@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#12372a">
+  <meta name="description" content="EcoShip crowd shipping dashboard: match parcels with existing journeys and estimate carbon savings.">
+  <title>EcoShip — Crowd Shipping Dashboard</title>
+
+  <!-- Bootstrap for responsive layout -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Leaflet map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <!-- App styles -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#" aria-label="EcoShip home">
+        <span class="brand-mark">E</span>
+        <span><strong>EcoShip</strong><small>SMARTER LOGISTICS</small></span>
+      </a>
+
+      <div class="sidebar-label">WORKSPACE</div>
+      <nav class="side-nav" aria-label="Main navigation">
+        <a class="nav-link active" href="#overview"><span class="nav-icon">▦</span> Overview</a>
+        <a class="nav-link" href="#matching"><span class="nav-icon">⇄</span> Find a match</a>
+        <a class="nav-link" href="#parcels"><span class="nav-icon">▣</span> Parcels <span class="nav-count" id="navParcelCount">0</span></a>
+        <a class="nav-link" href="#drivers"><span class="nav-icon">♧</span> Drivers</a>
+        <a class="nav-link" href="#impact"><span class="nav-icon">♧</span> Environmental impact</a>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="eco-card">
+          <div class="eco-icon">✳</div>
+          <h3>Every trip counts.</h3>
+          <p>Make better use of journeys already on the road.</p>
+          <div class="eco-progress"><span id="ecoProgress"></span></div>
+          <small id="ecoProgressLabel">Your demo impact is just getting started</small>
+        </div>
+        <div class="profile">
+          <div class="avatar">AD</div>
+          <div class="profile-text"><strong>Demo Admin</strong><small>Project workspace</small></div>
+          <span class="profile-menu">•••</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-content" id="overview">
+      <header class="topbar">
+        <button class="mobile-menu" id="mobileMenu" aria-label="Toggle navigation">☰</button>
+        <div class="breadcrumb">Workspace <span>/</span> <strong>Overview</strong></div>
+        <div class="topbar-right">
+          <span class="live-indicator"><i></i> DEMO MODE</span>
+          <button class="icon-button" id="resetDemo" title="Reset demo data" aria-label="Reset demo data">↻</button>
+          <div class="avatar top-avatar">AD</div>
+        </div>
+      </header>
+
+      <section class="page-heading">
+        <div>
+          <div class="eyebrow">MONDAY, YOUR LOGISTICS OVERVIEW</div>
+          <h1>Good day, Admin <span>✦</span></h1>
+          <p>Here's what's happening across your crowdshipping network.</p>
+        </div>
+        <button class="btn btn-primary-custom" id="newParcelTop"><span>＋</span> Register parcel</button>
+      </section>
+
+      <section class="stats-grid" aria-label="Key statistics">
+        <article class="stat-card">
+          <div class="stat-top"><span>Total parcels</span><span class="stat-icon lavender">▣</span></div>
+          <div class="stat-value" id="statParcels">0</div>
+          <div class="stat-foot"><span class="trend">↗ Live</span> parcels registered</div>
+          <div class="mini-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </article>
+        <article class="stat-card">
+          <div class="stat-top"><span>Available drivers</span><span class="stat-icon mint">♧</span></div>
+          <div class="stat-value" id="statDrivers">0</div>
+          <div class="stat-foot"><span class="trend">● Active</span> sample drivers</div>
+          <div class="mini-bars bars-green" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </article>
+        <article class="stat-card">
+          <div class="stat-top"><span>Matched parcels</span><span class="stat-icon blue">⇄</span></div>
+          <div class="stat-value" id="statMatched">0</div>
+          <div class="stat-foot"><span class="trend">↗ Matching</span> opportunities found</div>
+          <div class="mini-bars bars-blue" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </article>
+        <article class="stat-card">
+          <div class="stat-top"><span>Estimated CO₂ saved</span><span class="stat-icon amber">♧</span></div>
+          <div class="stat-value"><span id="statCarbon">0.0</span><small> kg</small></div>
+          <div class="stat-foot"><span class="trend">↘ Lower impact</span> illustrative estimate</div>
+          <div class="mini-bars bars-amber" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </article>
+      </section>
+
+      <section class="content-grid">
+        <article class="panel map-panel">
+          <div class="panel-heading">
+            <div><h2>Journey network</h2><p>Explore sample driver routes and parcel locations.</p></div>
+            <span class="pill pill-green"><i></i> Live map</span>
+          </div>
+          <div class="map-legend">
+            <span><i class="legend-dot driver-dot"></i> Driver journey</span>
+            <span><i class="legend-dot parcel-dot"></i> Parcel pickup</span>
+            <span><i class="legend-dot destination-dot"></i> Destination</span>
+          </div>
+          <div id="map" role="application" aria-label="Interactive map of sample delivery routes"></div>
+          <div class="map-footer"><span><i class="tiny-live"></i> Sample network across North India</span><button class="text-button" id="fitMap">Fit all routes ↗</button></div>
+        </article>
+
+        <article class="panel activity-panel" id="matching">
+          <div class="panel-heading">
+            <div><h2>Quick parcel match</h2><p>Find a driver already going your way.</p></div>
+            <span class="step-badge">01 / 02</span>
+          </div>
+          <form id="parcelForm" novalidate>
+            <div class="form-row">
+              <label for="pickup">Pickup city</label>
+              <div class="input-wrap"><span>⌖</span><input id="pickup" name="pickup" list="cityOptions" placeholder="e.g. Delhi" required autocomplete="off"></div>
+            </div>
+            <div class="form-row">
+              <label for="destination">Destination city</label>
+              <div class="input-wrap"><span>⌖</span><input id="destination" name="destination" list="cityOptions" placeholder="e.g. Dehradun" required autocomplete="off"></div>
+              <datalist id="cityOptions">
+                <option value="Delhi"><option value="Dehradun"><option value="Agra"><option value="Jaipur">
+                <option value="Chandigarh"><option value="Lucknow"><option value="Haridwar"><option value="Meerut">
+                <option value="Gurugram"><option value="Noida"><option value="Rishikesh"><option value="Kanpur">
+              </datalist>
+            </div>
+            <div class="form-split">
+              <div class="form-row">
+                <label for="weight">Parcel weight</label>
+                <div class="input-wrap"><span>▤</span><input id="weight" name="weight" type="number" min="0.1" max="100" step="0.1" value="2" required><em>kg</em></div>
+              </div>
+              <div class="form-row">
+                <label for="deadline">Delivery priority</label>
+                <select id="deadline" name="deadline" class="form-select">
+                  <option value="Flexible">Flexible</option><option value="Standard">Standard</option><option value="Urgent">Urgent</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <label for="parcelNote">Parcel description <span class="optional">OPTIONAL</span></label>
+              <input id="parcelNote" name="parcelNote" class="plain-input" maxlength="80" placeholder="e.g. Books, small box">
+            </div>
+            <div class="form-hint"><span>ⓘ</span> Matches use sample city routes and vehicle capacity. No booking is made.</div>
+            <div id="formError" class="form-error" role="alert" hidden></div>
+            <button class="btn btn-primary-custom w-100 match-button" type="submit"><span>⇄</span> Find matching drivers <span class="button-arrow">→</span></button>
+          </form>
+          <div id="matchResults" class="match-results" aria-live="polite"></div>
+        </article>
+      </section>
+
+      <section class="panel parcels-panel" id="parcels">
+        <div class="panel-heading parcel-heading">
+          <div><h2>Recent parcels</h2><p>Track parcel requests and their match status.</p></div>
+          <div class="table-actions">
+            <div class="search-box"><span>⌕</span><input id="parcelSearch" placeholder="Search parcels..." aria-label="Search parcels"></div>
+            <select id="statusFilter" class="filter-select" aria-label="Filter by status"><option value="All">All status</option><option value="Matched">Matched</option><option value="Pending">Pending</option><option value="No match">No match</option></select>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table parcel-table align-middle mb-0">
+            <thead><tr><th>PARCEL ID</th><th>JOURNEY</th><th>WEIGHT</th><th>DRIVER MATCH</th><th>STATUS</th><th>CO₂ SAVING</th><th></th></tr></thead>
+            <tbody id="parcelTableBody"></tbody>
+          </table>
+        </div>
+        <div id="emptyState" class="empty-state" hidden><div>▣</div><strong>No parcels found</strong><p>Try another search or register a new parcel.</p></div>
+        <div class="table-footer"><span id="tableCount">Showing 0 parcels</span><button class="text-button" id="clearSearch">Clear filters</button></div>
+      </section>
+
+      <section class="bottom-grid">
+        <article class="panel impact-panel" id="impact">
+          <div class="panel-heading"><div><h2>Environmental impact</h2><p>Estimated benefits from matched deliveries.</p></div><span class="stat-icon mint">♧</span></div>
+          <div class="impact-summary"><div><span class="impact-number" id="impactCarbon">0.0</span><span class="impact-unit">kg CO₂</span><small>potential emissions avoided</small></div><div class="impact-leaf">♧</div></div>
+          <div class="impact-meter"><div><span>Delivery consolidation</span><strong id="matchRate">0%</strong></div><div class="meter-track"><span id="matchRateBar"></span></div></div>
+          <div class="impact-note"><span>✳</span><p>Estimates compare an illustrative dedicated delivery trip with a crowdshipping parcel. Actual savings depend on detours, vehicle type, and load.</p></div>
+        </article>
+        <article class="panel drivers-panel" id="drivers">
+          <div class="panel-heading"><div><h2>Available drivers</h2><p>Sample drivers in the demo network.</p></div><span class="text-tag">DEMO DATA</span></div>
+          <div id="driverList" class="driver-list"></div>
+        </article>
+      </section>
+
+      <footer class="app-footer"><span>© 2025 EcoShip · Customer Crowd Shipping Model</span><span>Built for smarter, greener deliveries <b>✳</b></span></footer>
+    </main>
+  </div>
+
+  <div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="appToast" class="toast align-items-center text-bg-dark border-0" role="status" aria-live="polite">
+      <div class="d-flex"><div class="toast-body" id="toastMessage">Done.</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
